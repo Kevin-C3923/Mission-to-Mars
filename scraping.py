@@ -1,5 +1,6 @@
 
 # Import Splinter and BeautifulSoup
+from turtle import title
 from splinter import Browser
 from bs4 import BeautifulSoup as soup
 from webdriver_manager.chrome import ChromeDriverManager
@@ -19,8 +20,10 @@ def scrape_all():
       "news_paragraph": news_paragraph,
       "featured_image": featured_image(browser),
       "facts": mars_facts(),
-      "last_modified": dt.datetime.now()
-    }
+      "last_modified": dt.datetime.now(),
+      "hemispheres": hemishpere(browser)
+          }
+
     browser.quit()
     return data
 
@@ -93,6 +96,47 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")    
+
+def hemishpere(browser):
+    url = 'https://marshemispheres.com/'
+    browser.visit(url) 
+
+    hemisphere_image_urls = []
+
+    html = browser.html
+    img_soup = soup(html, 'html.parser')
+    list_of_images = img_soup.find_all(class_='item')
+
+    try:
+        for tags in list_of_images:
+            hemispheres = {}
+            items = tags.find('a')
+            url = items['href']
+            pic_url = f'https://marshemispheres.com/{url}'
+            
+            browser.visit(pic_url)
+            pic_html = browser.html
+            pic_soup = soup(pic_html, 'html.parser')
+            img_url_rel = pic_soup.find(class_='downloads')
+            img_link = img_url_rel.find('a').get('href')
+            jpg_link = f'https://marshemispheres.com/{img_link}'
+
+            browser.back()
+
+            imgs = items.find('img')
+            title = imgs['alt']
+            
+            imgs_url = jpg_link
+            
+            hemispheres =  {'img_url': imgs_url , 'title' : title } 
+
+            hemisphere_image_urls.append(hemispheres)
+
+    except BaseException:
+            return None
+    
+    return hemisphere_image_urls
+
 
 if __name__ == "__main__":
 
